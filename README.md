@@ -1,8 +1,10 @@
-@vue/preload-webpack-plugin
+preload-webpack-plugin-stzhang
 ============
 [![NPM version][npm-img]][npm-url]
 
 This is a fork of [preload-webpack-plugin](https://github.com/GoogleChromeLabs/preload-webpack-plugin) with a number of changes:
+
+- 兼容于`webpack 5+`与`html-webpack-plugin 4.5+`
 
 - Uses a combination of `htmlWebpackPluginBeforeHtmlProcessing` and `htmlWebpackPluginAlterAssetTags` hooks to inject links as objects rather than strings. This allows for more flexibility when the tags need to be altered by other plugins.
 
@@ -297,5 +299,5 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
 License for the specific language governing permissions and limitations under
 the License.
 
-[npm-url]: https://www.npmjs.com/package/@vue/preload-webpack-plugin
+[npm-url]: https://www.npmjs.com/package/preload-webpack-plugin-stzhang
 [npm-img]: https://badge.fury.io/js/%40vue%2Fpreload-webpack-plugin.svg

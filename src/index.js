@@ -90,7 +90,8 @@ class PreloadPlugin {
 
       links.push({
         tagName: 'link',
-        attributes
+        attributes,
+        voidTag: true
       })
     }
 
@@ -108,36 +109,80 @@ class PreloadPlugin {
         (exclude && exclude.includes(htmlFilename))
       )
     }
-
-    compiler.hooks.compilation.tap(
-      this.constructor.name,
-      compilation => {
-        compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing.tap(
-          this.constructor.name,
-          (htmlPluginData) => {
-            if (skip(htmlPluginData)) {
-              return
-            }
-            this.generateLinks(compilation, htmlPluginData)
-          }
-        )
-
-        compilation.hooks.htmlWebpackPluginAlterAssetTags.tap(
-          this.constructor.name,
-          (htmlPluginData) => {
-            if (skip(htmlPluginData)) {
-              return
-            }
-            if (this.resourceHints) {
-              htmlPluginData.head = [
-                ...this.resourceHints,
-                ...htmlPluginData.head
-              ]
-            }
-            return htmlPluginData
-          }
-        )
+    const appendHash = (url, hash) => {
+      if (!url) {
+        return url
       }
+      return url + (url.indexOf('?') === -1 ? '?' : '&') + hash
+    }
+    const buildReducer = (compilation, htmlPluginData) => {
+      const publicPath = compilation.outputOptions.publicPath || ''
+      return (chunks_, chunk) => {
+        // Prepend the public path to all chunk files
+        let chunkFiles = chunk.files.map(chunkFile => publicPath + chunkFile)
+        if (chunkFiles.some(file => ~htmlPluginData.assets.js.indexOf(file) || ~htmlPluginData.assets.css.indexOf(file))) {
+          const chunkName = chunk.names[0] || chunk.idHints[0]
+          chunks_[chunkName] = {}
+          // Append a hash for cache busting
+          if (htmlPluginData.plugin.options.hash) {
+            chunkFiles = chunkFiles.map(chunkFile => appendHash(chunkFile, compilation.hash))
+          }
+          // Webpack outputs an array for each chunk when using sourcemaps
+          // or when one chunk hosts js and css simultaneously
+          const js = chunkFiles.find(chunkFile => /.js($|\?)/.test(chunkFile))
+          if (js) {
+            chunks_[chunkName].size = chunk.size
+            chunks_[chunkName].entry = js
+            chunks_[chunkName].hash = chunk.hash
+          }
+          // Gather all css files
+          const css = chunkFiles.filter(chunkFile => /.css($|\?)/.test(chunkFile))
+          chunks_[chunkName].css = css
+        }
+        return chunks_
+      }
+    }
+    compiler.hooks.compilation.tap(this.constructor.name, compilation => {
+      let beforeHook, afterHook
+      if (typeof compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing === 'object') {
+        beforeHook = compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing
+        afterHook = compilation.hooks.htmlWebpackPluginAlterAssetTags
+      } else {
+        const HtmlWebpackPlugin = require('html-webpack-plugin')
+        const hooks = HtmlWebpackPlugin.getHooks(compilation)
+        beforeHook = hooks.beforeAssetTagGeneration
+        afterHook = hooks.alterAssetTagGroups
+      }
+      beforeHook.tap(this.constructor.name, htmlPluginData => {
+        if (htmlPluginData.plugin.version >= 4) {
+          const { chunks } = compilation.getStats().toJson({ chunks: true })
+          htmlPluginData.assets.chunks = Object.assign(htmlPluginData.assets.chunks || {}, chunks.reduce(buildReducer(compilation, htmlPluginData), {}))
+        }
+        if (skip(htmlPluginData)) {
+          return
+        }
+        this.generateLinks(compilation, htmlPluginData)
+      })
+      afterHook.tap(this.constructor.name, htmlPluginData => {
+        if (skip(htmlPluginData)) {
+          return
+        }
+        if (this.resourceHints) {
+          if (htmlPluginData.plugin.version >= 4) {
+            htmlPluginData.headTags = [
+              ...this.resourceHints,
+              ...htmlPluginData.headTags
+            ]
+          } else {
+            htmlPluginData.head = [
+              ...this.resourceHints,
+              ...htmlPluginData.head
+            ]
+          }
+        }
+        return htmlPluginData
+      })
+    }
     )
   }
 }
