@@ -68,13 +68,13 @@ Installation
 First, install the package as a dependency in your package.json:
 
 ```sh
-$ npm install --save-dev preload-webpack-plugin
+$ npm install --save-dev preload-webpack-plugin-stzhang
 ```
 
 Alternatively, using yarn:
 
 ```sh
-yarn add -D preload-webpack-plugin
+yarn add -D preload-webpack-plugin-stzhang
 ```
 
 Usage
@@ -83,7 +83,7 @@ Usage
 Next, in your Webpack config, `require()` the preload plugin as follows:
 
 ```js
-const PreloadWebpackPlugin = require('preload-webpack-plugin');
+const PreloadWebpackPlugin = require('preload-webpack-plugin-stzhang');
 ```
 
 and finally, configure the plugin in your Webpack `plugins` array after `HtmlWebpackPlugin`:
