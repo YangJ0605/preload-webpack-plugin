@@ -121,7 +121,7 @@ class PreloadPlugin {
         // Prepend the public path to all chunk files
         let chunkFiles = chunk.files.map(chunkFile => publicPath + chunkFile)
         if (chunkFiles.some(file => ~htmlPluginData.assets.js.indexOf(file) || ~htmlPluginData.assets.css.indexOf(file))) {
-          const chunkName = chunk.names[0] || chunk.idHints[0]
+          const chunkName = chunk.names?.[0] || chunk.idHints?.[0]
           chunks_[chunkName] = {}
           // Append a hash for cache busting
           if (htmlPluginData.plugin.options.hash) {
