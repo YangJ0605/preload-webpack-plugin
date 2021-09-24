@@ -1,4 +1,4 @@
-preload-webpack-plugin-stzhang
+preload-webpack-plugin-cc
 ============
 [![NPM version][npm-img]][npm-url]
 
